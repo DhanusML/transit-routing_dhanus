@@ -1,4 +1,6 @@
 # ignore datasets
 GTFS/
+__pycache__/
 travel_time_data_mini.txt
+
 
