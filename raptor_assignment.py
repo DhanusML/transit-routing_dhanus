@@ -234,7 +234,7 @@ if __name__ == "__main__":
     # ## global variables ## #
     NETWORK_NAME = 'anaheim'
     MAX_TRANSFER = 4
-    WALKING_FROM_SOURCE = 1
+    WALKING_FROM_SOURCE = 0
     CHANGE_TIME_SEC = 0
     PRINT_ITINERARY = 0
 
