@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from RAPTOR.std_raptor import raptor_dhanus
 from miscellaneous_func import read_testcase
-#  from tqdm import tqdm
+from tqdm import tqdm
 
 
 def generate_OD_matrix(size: int) -> np.ndarray:
@@ -69,7 +69,7 @@ def get_available_options(od_mat: np.ndarray) -> list:
                             Journey object.)
     """
     pareto_journeys = []
-    for origin, destination in od_mat:
+    for origin, destination in tqdm(od_mat):
         time = _gen_random_date_time()
         output = raptor_dhanus(origin, destination, time, MAX_TRANSFER,
                                WALKING_FROM_SOURCE, CHANGE_TIME_SEC,
@@ -133,10 +133,12 @@ def get_optimal_choices(od_mat, beta):
     """
     bT, bN = beta[0], beta[1]
 
+    print("getting pareto optimal journeys")
     list_of_pareto_journeys = get_available_options(od_mat)
     selected_journeys = []
 
-    for pareto_journeys in list_of_pareto_journeys:
+    print("making choice")
+    for pareto_journeys in tqdm(list_of_pareto_journeys):
         util_list = []
         for journey in pareto_journeys:
             travel_time = journey.get_ovtt() + journey.get_ivtt()
