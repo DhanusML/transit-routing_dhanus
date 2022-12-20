@@ -152,6 +152,83 @@ def get_optimal_choices(od_mat, beta):
     return selected_journeys
 
 
+def get_segment_occupancy(journeys):
+    """
+    Takes a list of journeys as input and returns a dictionary,
+    representing how crowded each trip is.
+
+    Arguments:
+    journeys (list): list of journeys (journey_rep.Journey object).
+
+    Returns:
+    occupancy_dict (dict): dictionary object, with keys
+                           `trip_id'.
+                           occupancy_dict[trip_id] = dict_segments,
+                           where dict_segment[segment] gives the
+                           number of passengers in the segment.
+                           segment is of the form (start_id, stop_id),
+                           the stop_id's of the origin and destination.
+                           So, occupancy_dict[trip_id][(s1,s2)] gives
+                           the number of people who were on the
+                           trip `trip_id', from stops s1 to s2
+    """
+    occupancy_dict = {}
+
+    for journey in journeys:
+        thisJourneySeq = journey.journey_seq
+        for leg in thisJourneySeq:
+            if leg.mode == 'walk':
+                continue
+            else:
+                trip_id = leg.trip_id
+                if trip_id not in occupancy_dict:
+                    occupancy_dict[trip_id] = {}
+
+                route_id = int(trip_id.split('_')[0])
+                start_id = leg.start_id
+                stop_id = leg.stop_id
+                stops_in_route = stops_dict.get(route_id)
+
+                if stops_in_route is None:
+                    raise Exception(f"route {route_id} not found")
+
+                i = 0
+                while i < len(stops_in_route)-1:
+                    if stops_in_route[i] != start_id:
+                        i += 1
+
+                    else:
+                        segment_start = stops_in_route[i]  # equal to start_id
+                        segment_end = stops_in_route[i+1]
+                        segment = (segment_start, segment_end)
+
+                        while segment_end != stop_id:
+                            if segment not in occupancy_dict[trip_id]:
+                                occupancy_dict[trip_id][segment] = 1
+                            else:
+                                occupancy_dict[trip_id][segment] += 1
+
+                            i += 1
+
+                            if i >= len(stops_in_route):
+                                raise Exception("invalid stop_seq")
+
+                            segment_start = stops_in_route[i]
+                            segment_end = stops_in_route[i+1]
+
+                        else:
+                            segment = (segment_start, segment_end)
+
+                            if segment not in occupancy_dict[trip_id]:
+                                occupancy_dict[trip_id][segment] = 1
+                            else:
+                                occupancy_dict[trip_id][segment] += 1
+
+                            break
+
+    return occupancy_dict
+
+
 if __name__ == "__main__":
 
     # ## global variables ## #
@@ -175,3 +252,7 @@ if __name__ == "__main__":
     for j in selected_journeys:
         print(j)
         print("*****\n")
+
+    occupancy_dict = get_segment_occupancy(selected_journeys)
+    for key in occupancy_dict.keys():
+        print(key, occupancy_dict[key])
