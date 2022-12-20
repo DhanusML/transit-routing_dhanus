@@ -1,11 +1,7 @@
 """
 Module contains function related to RAPTOR, rRAPTOR, One-To-Many rRAPTOR, HypRAPTOR
-Created for Dhanus. This also contains functionality to get IVTT, OVTT etc.
-There are 3 additional funcitons: update_record, _calculate_tt, _waiting_time, _calcuLATE_ivtt.
-update_record will be called after line 205
 """
 from collections import deque as deque
-from RAPTOR.journey_rep import Journey
 
 import pandas as pd
 
@@ -149,77 +145,6 @@ def post_processing(DESTINATION: int, pi_label: dict, PRINT_ITINERARY: int, labe
         return rounds_inwhich_desti_reached, trip_set, rap_out
 
 
-def post_processing_dhanus(DESTINATION: int, pi_label: dict, PRINT_ITINERARY: int, label: dict) -> tuple:
-    '''
-    Post processing for std_RAPTOR. Currently supported functionality:
-        1. Rounds in which DESTINATION is reached
-        2. Trips for covering pareto optimal set
-        3. Pareto optimal timestamps.
-
-    Args:
-        DESTINATION (int): stop id of destination stop.
-        pi_label (dict): Nested dict used for backtracking. Primary keys: Round, Secondary keys: stop id. Format- {round : {stop_id: pointer_label}}
-        PRINT_ITINERARY (int): 1 or 0. 1 means print complete path.
-        label (dict): nested dict to maintain label. Format {round : {stop_id: pandas.datetime}}.
-
-    Returns:
-        rounds_inwhich_desti_reached (list): list of rounds in which DESTINATION is reached. Format - [int]
-        trip_set (list): list of trips ids required to cover optimal journeys. Format - [char]
-        rap_out (dict):
-            keys: 'old', 'tt'. rap_out['old'] is the output of rap_out of post_processing.
-            rap_out['tt'] gives the travel time information in the form
-            [(num_transfers, travel_time_dict)]. (see get_t_times for
-            description of travel_time_dict)
-
-    Examples:
-        >>> output = post_processing(1482, pi_label, 1, label)
-    '''
-    rounds_inwhich_desti_reached = [x for x in pi_label.keys() if pi_label[x][DESTINATION] != -1]
-
-    if rounds_inwhich_desti_reached == []:
-        if PRINT_ITINERARY == 1:
-            print('DESTINATION cannot be reached with given MAX_TRANSFERS')
-        return None, None, None
-    else:
-        rounds_inwhich_desti_reached.reverse()
-        pareto_set = []
-        trip_set = []
-        rap_out = [label[k][DESTINATION] for k in rounds_inwhich_desti_reached]
-        for k in rounds_inwhich_desti_reached:
-            transfer_needed = k - 1
-            journey = []
-            stop = DESTINATION
-            while pi_label[k][stop] != -1:
-                journey.append(pi_label[k][stop])
-                mode = pi_label[k][stop][0]
-                if mode == 'walking':
-                    stop = pi_label[k][stop][1]
-                else:
-                    trip_set.append(pi_label[k][stop][-1])
-                    stop = pi_label[k][stop][1]
-                    k = k - 1
-            journey.reverse()
-            pareto_set.append((transfer_needed, journey))
-
-        if PRINT_ITINERARY == 1:
-            _print_Journey_legs(pareto_set)
-        #        _save_routesExplored(save_routes, routes_exp)
-
-        tt_data = []
-        journeys = []
-        for trans, journey in pareto_set:
-            journeys.append(Journey(trans, journey))
-
-            ans_dict = get_t_times(journey)
-            tt_data.append((trans, ans_dict))
-
-        rap_out_new = {"old": rap_out,
-                       "tt": tt_data,
-                       "journeys": journeys}
-
-        return rounds_inwhich_desti_reached, trip_set, rap_out_new
-
-
 def _print_Journey_legs(pareto_journeys: list) -> None:
     '''
     Prints journey in correct format. Parent Function: post_processing
@@ -243,37 +168,6 @@ def _print_Journey_legs(pareto_journeys: list) -> None:
                     f'from {leg[1]} board at {leg[0].time()} and get down on {leg[2]} at {leg[3].time()} along {leg[-1]}')
         print("####################################")
     return None
-
-
-def get_t_times(journey: list, D_TIME=None) -> dict:
-    """
-    Computes `walk_time', `wait_time', `ovtt' and ivtt'.
-    walk_time: time in seconds spent walking.
-    wait_time: time in seconds spent waiting.
-    ovtt: outside vehicle travel time (walk_time + wait_time).
-    ivtt: inside vehicle travel time.
-
-    Args:
-        journey (list): list of `pointer_labels' of the journey.
-        D_TIME (datetime.datetime): departure time.
-
-    Return:
-        result_dict (dict): dictionary with keys
-            * `walk_time'
-            * `wait_time'
-            * `ovtt'
-            * `ivtt'.
-            And values being the corresponding values in
-            seconds.
-    """
-    j_obj = Journey(0, journey, D_TIME)
-    result_dict = {'walk_time': j_obj.get_walk_time(),
-                   'wait_time':j_obj.get_wait_time(),
-                   'ovtt': j_obj.get_ovtt(),
-                   'ivtt': j_obj.get_ivtt()}
-
-    return result_dict
-
 
 def post_processing_onetomany_rraptor(DESTINATION_LIST: list, pi_label: dict, PRINT_ITINERARY: int, label: dict, OPTIMIZED: int) -> list:
     '''

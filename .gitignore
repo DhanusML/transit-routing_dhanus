@@ -1,0 +1,4 @@
+# ignore datasets
+GTFS/
+travel_time_data_mini.txt
+

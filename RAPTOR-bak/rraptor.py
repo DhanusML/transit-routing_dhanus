@@ -134,7 +134,7 @@ def rraptor(SOURCE: int, DESTINATION: int, d_time_groups, MAX_TRANSFER: int, WAL
                 if PRINT_ITINERARY == 1:
                     print('code ended with termination condition')
                 break
-        out.extend(post_processing_rraptor(DESTINATION, pi_label, PRINT_ITINERARY, label, OPTIMIZED, D_TIME=d_time))
+        out.extend(post_processing_rraptor(DESTINATION, pi_label, PRINT_ITINERARY, label, OPTIMIZED))
         if PRINT_ITINERARY == 1:
             print('------------------------------------')
     return out
