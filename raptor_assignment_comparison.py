@@ -1,3 +1,7 @@
+"""
+Compares the time for assignment process for serial and parallel
+raptor.
+"""
 from multiprocessing import pool
 from miscellaneous_func import read_testcase
 from multiprocessing import Pool
@@ -11,12 +15,15 @@ from tqdm import tqdm
 
 def raptor_dhanus_par(SOURCE: int, DESTINATION: int, D_TIME) -> list:
     '''
-    Standard Raptor implementation
+    Standard Raptor implementation. Modified for parallel running. Metadata
+    is given as global variable.
 
     Args:
         SOURCE (int): stop id of source stop.
         DESTINATION (int): stop id of destination stop.
         D_TIME (pandas.datetime): departure time.
+
+    Global variables:
         MAX_TRANSFER (int): maximum transfer limit.
         WALKING_FROM_SOURCE (int): 1 or 0. 1 indicates walking from SOURCE is allowed.
         CHANGE_TIME_SEC (int): change-time in seconds.
@@ -124,7 +131,7 @@ def raptor_dhanus_par(SOURCE: int, DESTINATION: int, D_TIME) -> list:
     return out
 
 
-def generate_od_matrix_with_time(size: int) -> np.ndarray:
+def generate_od_matrix_with_time(size: int) -> list:
     """
     Generates random origin destination pairs
 
@@ -132,9 +139,7 @@ def generate_od_matrix_with_time(size: int) -> np.ndarray:
     size (int): the number of pairs requiered
 
     Returns:
-    od_mat (np.ndarray): size*2 matrix of np.int32's ,
-                         each row is an o-d pair
-
+    od_mat (list): list of the elements [(origin, destination, time),...]
     """
     data = pd.read_csv(f'./GTFS/{NETWORK_NAME}/stops.txt')
     stop_ids = data['stop_id']
@@ -178,6 +183,8 @@ def _gen_random_date_time(date='2012-06-10'):
 def get_available_options_par(od_mat: list) -> list:
     """
     Returns the list of list of pareto-optimal journeys.
+    Runs in parallel. Uses CORES number of cores (CORES:) int is
+    a global variable.
 
     Params:
     od_mat (np.ndarray): each row is an origin destination pair.
@@ -205,6 +212,7 @@ def get_available_options_par(od_mat: list) -> list:
 def get_available_options_ser(od_mat: np.ndarray) -> list:
     """
     Returns the list of list of pareto-optimal journeys.
+    Runs serially.
 
     Params:
     od_mat (np.ndarray): each row is an origin destination pair.
@@ -305,7 +313,7 @@ def get_optimal_choices(od_mat, beta, op='ser'):
         for journey in pareto_journeys:
             travel_time = journey.get_ovtt() + journey.get_ivtt()
             num_transfers = journey.transfers
-            u = bT*travel_time/3600 + bN*num_transfers  # travelteim hrs
+            u = bT*travel_time/60 + bN*num_transfers  # travelteim hrs
             util_list.append(u)
 
         choice = _make_choice(util_list)
